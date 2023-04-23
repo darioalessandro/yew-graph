@@ -36,6 +36,8 @@ function draw() {
 
   const circleAlpha = 1 - Math.min(1, Math.max(0, zoomLevel - 1));
   const triangleAlpha = Math.min(1, Math.max(0, zoomLevel - 1));
+  console.log("circleAlpha", circleAlpha);
+  console.log("triangleAlpha", triangleAlpha);
 
   if (zoomedIn || zoomLevel >= 2) {
     drawTriangle(triangleAlpha);
