@@ -1,35 +1,51 @@
-body {
-    margin: 0;
-    font-family: Arial, sans-serif;
-  }
-  
-  .container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
-    background-color: #f0f0f0;
-  }
-  
-  .canvas {
-    position: relative;
-    width: 500px;
-    height: 300px;
-    overflow: hidden;
-  }
-  
-  .image-a,
-  .image-b {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    transition: opacity 1s ease-in-out;
-  }
-  
-  .image-b {
-    opacity: 0;
-  }
-  
+.slide {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+#canvas {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-origin: center center;
+  transition: transform 0.5s;
+}
+
+.node-content {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100px;
+  height: 100px;
+  background-color: #ffffff;
+  border: 1px solid #0072c6;
+  display: none;
+  overflow: hidden;
+}
+
+.node-content.active {
+  display: block;
+}
+
+#slide-name {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+#slide-2 {
+  width: 100%;
+  height: 100%;
+  background-color: #ffffff;
+  display: none;
+}
+
+#slide-2.active {
+  display: block;
+}

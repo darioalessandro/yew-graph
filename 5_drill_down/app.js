@@ -17,7 +17,7 @@ class Node {
   draw(alpha) {
     ctx.globalAlpha = alpha;
     ctx.beginPath();
-    ctx.arc(this.x, this.y, 10, 0, 2 * Math.PI);
+    ctx.arc(this.x, this.y, 15, 0, 2 * Math.PI);
     ctx.fillStyle = '#f00';
     ctx.fill();
     ctx.font = '14px Arial';
