@@ -32,8 +32,6 @@ impl CanvasApp {
             let (index, (x, y)) = node;
             let x = *x as f64;
             let y = *y as f64;
-            // let (x, y) = ((index.into() + 1) as f64 * 100.0, 100.0);
-
             // // Draw node
             self.context.set_fill_style(&JsValue::from_str("red"));
             self.context.begin_path();
@@ -57,13 +55,11 @@ impl CanvasApp {
         for edge in graph.edge_references() {
             // let source = edge.source();
             // let target = edge.target();
-            // let (_, source_pos) = ((source.into() + 1) as f64 * 100.0, 100.0);
-            // let (_, target_pos) = ((target.into() + 1) as f64 * 100.0, 100.0);
 
-            // // Draw edge
+            // // // Draw edge
             // self.context.begin_path();
-            // // self.context.move_to(source_pos.0, source_pos.1);
-            // // self.context.line_to(target_pos.0, target_pos.1);
+            // self.context.move_to(source_pos.0, source_pos.1);
+            // self.context.line_to(target_pos.0, target_pos.1);
             // self.context.stroke();
         }
     }
