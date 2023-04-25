@@ -1,55 +1,61 @@
-use crate::CanvasApp;
-use petgraph::graph::UnGraph;
+use petgraph::{stable_graph::NodeIndex, Graph};
+use rand::Rng;
 use wasm_bindgen::JsCast;
-use yew::events::MouseEvent;
-use yew::html::NodeRef;
+use web_sys::HtmlCanvasElement;
 use yew::prelude::*;
 
+use crate::CanvasApp;
+
+pub type NetworkGraph = Graph<(f32, f32), usize>;
+
+fn generate_random_graph(node_count: usize, edge_count: usize) -> NetworkGraph {
+    let mut graph = NetworkGraph::new();
+    let mut rng = rand::thread_rng();
+
+    for _ in 0..node_count {
+        let x = rng.gen_range(50.0, 750.0);
+        let y = rng.gen_range(50.0, 550.0);
+        graph.add_node((x, y));
+    }
+
+    for _ in 0..edge_count {
+        let source = rng.gen_range(0, node_count);
+        let target = rng.gen_range(0, node_count);
+
+        if source != target {
+            graph.add_edge(NodeIndex::new(source), NodeIndex::new(target), 1);
+        }
+    }
+
+    graph
+}
+
 pub struct GraphComponent {
-    graph: UnGraph<String, ()>,
-    canvas_app: Option<CanvasApp>,
     canvas_ref: NodeRef,
+    graph: NetworkGraph,
 }
 
 pub enum Msg {
-    Click(MouseEvent),
+    Draw,
 }
 
 impl Component for GraphComponent {
     type Message = Msg;
     type Properties = ();
 
-    fn create(_: Self::Properties, link: ComponentLink<Self>) -> Self {
-        let graph = UnGraph::<String, ()>::from_edges(&[
-            (("100", "100"), ("300", "100"), ()),
-            (("300", "100"), ("400", "200"), ()),
-            (("400", "200"), ("100", "100"), ()),
-        ]);
-
+    fn create(ctx: &Context<Self>) -> Self {
+        let graph = generate_random_graph(10, 15);
         Self {
-            graph,
-            canvas_app: None,
             canvas_ref: NodeRef::default(),
+            graph,
         }
     }
 
-    fn rendered(&mut self, first_render: bool) {
-        if first_render {
-            let canvas = self.canvas_ref.cast::<HtmlCanvasElement>().unwrap();
-            let mut canvas_app = CanvasApp::new(canvas);
-            canvas_app.draw(&self.graph);
-            self.canvas_app = Some(canvas_app);
-        }
-    }
-
-    fn update(&mut self, msg: Self::Message) -> ShouldRender {
+    fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
-            Msg::Click(event) => {
-                if let Some(canvas_app) = &mut self.canvas_app {
-                    let x = event.client_x() as f64;
-                    let y = event.client_y() as f64;
-                    let factor = 1.5;
-                    canvas_app.zoom(x, y, factor);
+            Msg::Draw => {
+                if let Some(canvas) = self.canvas_ref.cast::<HtmlCanvasElement>() {
+                    let canvas_app = CanvasApp::new(canvas).unwrap();
                     canvas_app.draw(&self.graph);
                 }
             }
@@ -57,19 +63,16 @@ impl Component for GraphComponent {
         false
     }
 
-    fn change(&mut self, _: Self::Properties) -> ShouldRender {
+    fn changed(&mut self, ctx: &Context<Self>) -> bool {
         false
     }
 
-    fn view(&self) -> Html {
+    fn view(&self, ctx: &Context<Self>) -> Html {
         html! {
-            <canvas
-                ref={self.canvas_ref.clone()}
-                width="800"
-                height="600"
-                onclick={self.link.callback(Msg::Click)}
-            />
+            <>
+                <canvas ref={self.canvas_ref.clone()} width="800" height="600" />
+                <button onclick={ctx.link().callback(|_| Msg::Draw)}>{"Draw"}</button>
+            </>
         }
     }
 }
-

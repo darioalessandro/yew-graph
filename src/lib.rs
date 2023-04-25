@@ -1,62 +1,70 @@
 pub mod graph;
 
+use graph::NetworkGraph;
+use petgraph::stable_graph::NodeIndex;
+use petgraph::visit::EdgeRef;
+use petgraph::visit::IntoNodeReferences;
 use wasm_bindgen::prelude::*;
-use yew::prelude::*;
 use web_sys::{CanvasRenderingContext2d, HtmlCanvasElement};
-use petgraph::graph::UnGraph;
+use yew::prelude::*;
 
 pub struct CanvasApp {
     context: CanvasRenderingContext2d,
-    scale: f64,
 }
 
 impl CanvasApp {
-    pub fn new(canvas: HtmlCanvasElement) -> Self {
+    pub fn new(canvas: HtmlCanvasElement) -> Result<Self, JsValue> {
         let context = canvas
-            .get_context("2d")
+            .get_context("2d")?
             .unwrap()
-            .unwrap()
-            .dyn_into::<CanvasRenderingContext2d>()
-            .unwrap();
-        let scale = 1.0;
+            .dyn_into::<CanvasRenderingContext2d>()?;
 
-        Self { context, scale }
+        Ok(Self { context })
     }
 
-    pub fn draw(&mut self, graph: &UnGraph<String, ()>) {
-        // Clear canvas
-        self.context.set_fill_style(&JsValue::from_str("white"));
-        self.context.fill_rect(0.0, 0.0, 800.0, 600.0);
-
-        // Draw nodes
-        for node in graph.node_indices() {
-            let position = graph.node_weight(node).unwrap();
-
-            self.context.begin_path();
-            self.context.set_fill_style(&JsValue::from_str("blue"));
-            self.context.arc(position.0 as f64, position.1 as f64, 20.0, 0.0, 2.0 * std::f64::consts::PI).unwrap();
-            self.context.fill();
-            self.context.close_path();
-        }
-
-        // Draw edges
+    pub fn draw(&self, graph: &NetworkGraph) {
+        self.context.set_line_width(2.0);
         self.context.set_stroke_style(&JsValue::from_str("black"));
-        for edge in graph.edge_indices() {
-            let (source, target) = graph.edge_endpoints(edge).unwrap();
-            let source_position = graph.node_weight(source).unwrap();
-            let target_position = graph.node_weight(target).unwrap();
 
+        let radius = 20.0 as f64;
+
+        for node in graph.node_references() {
+            let (index, (x, y)) = node;
+            let x = *x as f64;
+            let y = *y as f64;
+            // let (x, y) = ((index.into() + 1) as f64 * 100.0, 100.0);
+
+            // // Draw node
+            self.context.set_fill_style(&JsValue::from_str("red"));
             self.context.begin_path();
-            self.context.move_to(source_position.0 as f64, source_position.1 as f64);
-            self.context.line_to(target_position.0 as f64, target_position.1 as f64);
-            self.context.stroke();
-            self.context.close_path();
-        }
-    }
+            self.context
+                .arc(x as f64, y as f64, radius, 0.0, 2.0 * std::f64::consts::PI)
+                .unwrap();
+            self.context.fill();
 
-    pub fn zoom(&mut self, x: f64, y: f64, factor: f64) {
-        self.scale *= factor;
-        self.context.translate(-x * (factor - 1.0), -y * (factor - 1.0)).unwrap();
-        self.context.scale(factor, factor).unwrap();
+            // // Draw node label
+            self.context.set_fill_style(&JsValue::from_str("white"));
+            self.context.set_font("16px sans-serif");
+            self.context
+                .fill_text(
+                    &format!("{:?}", index),
+                    (x - (radius / 2.0)).into(),
+                    (y + (radius / 4.0)).into(),
+                )
+                .unwrap();
+        }
+
+        for edge in graph.edge_references() {
+            // let source = edge.source();
+            // let target = edge.target();
+            // let (_, source_pos) = ((source.into() + 1) as f64 * 100.0, 100.0);
+            // let (_, target_pos) = ((target.into() + 1) as f64 * 100.0, 100.0);
+
+            // // Draw edge
+            // self.context.begin_path();
+            // // self.context.move_to(source_pos.0, source_pos.1);
+            // // self.context.line_to(target_pos.0, target_pos.1);
+            // self.context.stroke();
+        }
     }
 }
