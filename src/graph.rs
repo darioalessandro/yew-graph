@@ -41,7 +41,8 @@ fn is_node_clicked(node_position: &(f64, f64), click_position: &(f64, f64), radi
 
 
 pub struct GraphComponent {
-    canvas_ref: NodeRef,
+    canvas_ref_1: NodeRef,
+    canvas_ref_2: NodeRef,
     graphs: Vec<NetworkGraph>,
     current_graph: usize,
 }
@@ -58,13 +59,43 @@ impl GraphComponent {
         let click_y = event.client_y() as f64;
         let click_position = (click_x, click_y);
         let node_radius = 30.0;
-        // log!("click position: ", click_x, click_y);
+        log!("click position: ", click_x, click_y);
     
-        let graph = &self.graphs[self.current_graph];
+        let graph = &self.graphs[0];
         for (node_index, node) in graph.node_indices().zip(graph.node_weights()) {
             let node_position = (node.0 as f64, node.1 as f64);
-            // log!("node position: ", node_position.0, node_position.1);
+            log!("node position: ", node_position.0, node_position.1);
             if is_node_clicked(&node_position, &click_position, node_radius) {
+                log!("node clicked", node_index.index());
+                let canvas1 = self.canvas_ref_1.cast::<HtmlCanvasElement>().unwrap();
+                let canvas2 = self.canvas_ref_2.cast::<HtmlCanvasElement>().unwrap();
+
+                let scale = 10.0; // The zoom factor.
+                let duration = 1000; // The duration of the animation in milliseconds.
+
+                canvas1.set_attribute(
+                    "style",
+                    &format!(
+                        "position: absolute; top: 0; left: 0; transition: {}ms; transform: translate(-{}px, -{}px) scale({}); opacity: 0.5;",
+                        duration,
+                        (click_x - 400.0) * (scale - 1.0),
+                        (click_y - 300.0) * (scale - 1.0),
+                        scale
+                    ),
+                )
+                .unwrap();
+    
+                canvas2.set_attribute(
+                    "style",
+                    &format!(
+                        "position: absolute; top: 0; left: 0; transition: {}ms; scale({}); opacity: 1;",
+                        duration,
+                        // (click_x - 400.0) * (scale - 1.0),
+                        // (click_y - 300.0) * (scale - 1.0),
+                        1
+                    ),
+                )
+                .unwrap();
                 return Some(Msg::NodeClicked(node_index.index()));
             }
         }
@@ -78,7 +109,8 @@ impl Component for GraphComponent {
 
     fn create(ctx: &Context<Self>) -> Self {
         Self {
-            canvas_ref: NodeRef::default(),
+            canvas_ref_1: NodeRef::default(),
+            canvas_ref_2: NodeRef::default(),
             graphs: vec![generate_random_graph_root_at_center(10), generate_random_graph_root_at_center(15)],
             current_graph: 0,
         }
@@ -87,20 +119,24 @@ impl Component for GraphComponent {
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         return match msg {
             Msg::Draw => {
-                if let Some(canvas) = self.canvas_ref.cast::<HtmlCanvasElement>() {
+                if let Some(canvas) = self.canvas_ref_1.cast::<HtmlCanvasElement>() {
                     let canvas_app = CanvasApp::new(canvas).unwrap();
-                    canvas_app.draw(&self.graphs[self.current_graph]);
+                    canvas_app.draw(&self.graphs[0]);
+                }
+                if let Some(canvas) = self.canvas_ref_2.cast::<HtmlCanvasElement>() {
+                    let canvas_app = CanvasApp::new(canvas).unwrap();
+                    canvas_app.draw(&self.graphs[1]);
                 }
                 false
             },
             Msg::NodeClicked(node_index) => {
                 log!("node clicked", node_index);
                 log!("clicked node: {}", node_index);
-                self.current_graph = (self.current_graph + 1) % self.graphs.len();
-                if let Some(canvas) = self.canvas_ref.cast::<HtmlCanvasElement>() {
-                    let canvas_app = CanvasApp::new(canvas).unwrap();
-                    canvas_app.draw(&self.graphs[self.current_graph]);
-                }
+                // self.current_graph = (self.current_graph + 1) % self.graphs.len();
+                // if let Some(canvas) = self.canvas_ref_1.cast::<HtmlCanvasElement>() {
+                //     let canvas_app = CanvasApp::new(canvas).unwrap();
+                //     canvas_app.draw(&self.graphs[self.current_graph]);
+                // }
                 false
             },
             Msg::OnCanvasClick(event) => {
@@ -122,12 +158,14 @@ impl Component for GraphComponent {
         let callback = ctx.link().callback(Msg::OnCanvasClick);
         html! {
             <>
-                <canvas 
-                ref={self.canvas_ref.clone()} 
-                width="1920" 
-                height="1080" 
-                onclick={callback}
+            <div class="canvas-container" style="position: relative;">
+                <canvas  ref={self.canvas_ref_1.clone()} width="1920" height="1080" onclick={callback} 
+                 style="position: absolute; top: 0; left: 0; opacity: 1; transform-origin: center; z-index: 3;"
                 />
+                <canvas ref={self.canvas_ref_2.clone()} width="1920" height="1080" 
+                style="position: absolute; top: 0; left: 0; opacity: 0; transform-origin: center; z-index: 2;"
+                 />
+            </div>
             </>
         }
     }
