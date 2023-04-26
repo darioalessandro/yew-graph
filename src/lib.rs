@@ -26,7 +26,12 @@ impl CanvasApp {
 
     pub fn draw(&self, graph: &NetworkGraph) {
         log!("drawing");
-        self.context.clear_rect(0.0, 0.0, self.canvas.width() as f64, self.canvas.height() as f64);
+        self.context.clear_rect(
+            0.0,
+            0.0,
+            self.canvas.width() as f64,
+            self.canvas.height() as f64,
+        );
         self.context.set_line_width(2.0);
         self.context.set_stroke_style(&JsValue::from_str("black"));
 
@@ -52,7 +57,6 @@ impl CanvasApp {
                 .line_to(target_position.0 as f64, target_position.1 as f64);
             self.context.stroke();
         }
-        
 
         for node in graph.node_references() {
             let (index, (x, y)) = node;
@@ -67,19 +71,11 @@ impl CanvasApp {
             self.context.fill();
 
             // // Draw node label
-            self.context.set_fill_style(&JsValue::from_str("white"));
+            self.context.set_fill_style(&JsValue::from_str("black"));
             self.context.set_font("16px sans-serif");
             let x = (x - (radius / 2.0)).into();
             let y = (y + (radius / 4.0)).into();
-            self.context
-                .fill_text(
-                    &format!("{x}, {y}"),
-                    x,
-                    y,
-                )
-                .unwrap();
+            self.context.fill_text(&format!("{x}, {y}"), x, y).unwrap();
         }
-
-
     }
 }

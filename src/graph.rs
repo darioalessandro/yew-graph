@@ -1,7 +1,9 @@
 use gloo_console::log;
 use petgraph::{stable_graph::NodeIndex, Graph};
 use rand::Rng;
-use wasm_bindgen::JsCast;
+use wasm_bindgen::{prelude::Closure, JsCast, JsValue};
+
+use web_sys::window;
 use web_sys::HtmlCanvasElement;
 use yew::prelude::*;
 
@@ -39,7 +41,6 @@ fn is_node_clicked(node_position: &(f64, f64), click_position: &(f64, f64), radi
     distance_squared <= radius * radius
 }
 
-
 pub struct GraphComponent {
     canvas_ref_1: NodeRef,
     canvas_ref_2: NodeRef,
@@ -58,50 +59,51 @@ impl GraphComponent {
         let click_x = event.client_x() as f64;
         let click_y = event.client_y() as f64;
         let click_position = (click_x, click_y);
-        let node_radius = 30.0;
+        let node_radius = 50.0;
         log!("click position: ", click_x, click_y);
-    
-        let graph = &self.graphs[0];
+
+        let graph = &self.graphs[self.current_graph];
         for (node_index, node) in graph.node_indices().zip(graph.node_weights()) {
             let node_position = (node.0 as f64, node.1 as f64);
-            log!("node position: ", node_position.0, node_position.1);
             if is_node_clicked(&node_position, &click_position, node_radius) {
-                log!("node clicked", node_index.index());
                 let canvas1 = self.canvas_ref_1.cast::<HtmlCanvasElement>().unwrap();
                 let canvas2 = self.canvas_ref_2.cast::<HtmlCanvasElement>().unwrap();
-
                 let scale = 10.0; // The zoom factor.
                 let duration = 1000; // The duration of the animation in milliseconds.
-
-                canvas1.set_attribute(
-                    "style",
-                    &format!(
-                        "position: absolute; top: 0; left: 0; transition: {}ms; transform: translate(-{}px, -{}px) scale({}); opacity: 0.5;",
-                        duration,
-                        (click_x - 400.0) * (scale - 1.0),
-                        (click_y - 300.0) * (scale - 1.0),
-                        scale
-                    ),
-                )
-                .unwrap();
-    
-                canvas2.set_attribute(
-                    "style",
-                    &format!(
-                        "position: absolute; top: 0; left: 0; transition: {}ms; scale({}); opacity: 1;",
-                        duration,
-                        // (click_x - 400.0) * (scale - 1.0),
-                        // (click_y - 300.0) * (scale - 1.0),
-                        1
-                    ),
-                )
-                .unwrap();
+                let callback = Closure::wrap(Box::new(move || {
+                    canvas1.set_attribute(
+                        "style",
+                        &format!(
+                            "position: absolute; top: 0; left: 0; transition: {}ms; transform: translate(-{}px, -{}px) scale({}); opacity: 0.5;",
+                            duration,
+                            (click_x - 400.0) * (scale - 1.0),
+                            (click_y - 300.0) * (scale - 1.0),
+                            scale
+                        ),
+                    )
+                    .unwrap();
+                    canvas2.set_attribute(
+                        "style",
+                        &format!(
+                            "position: absolute; top: 0; left: 0; transition: {}ms; scale({}); opacity: 1;",
+                            duration,
+                            // (click_x - 400.0) * (scale - 1.0),
+                            // (click_y - 300.0) * (scale - 1.0),
+                            1
+                        ),
+                    )
+                    .unwrap();
+                }) as Box<dyn FnMut()>);
+                window()
+                    .unwrap()
+                    .request_animation_frame(callback.as_ref().unchecked_ref())
+                    .unwrap();
+                callback.forget();
                 return Some(Msg::NodeClicked(node_index.index()));
             }
         }
         None
     }
-
 }
 impl Component for GraphComponent {
     type Message = Msg;
@@ -111,7 +113,10 @@ impl Component for GraphComponent {
         Self {
             canvas_ref_1: NodeRef::default(),
             canvas_ref_2: NodeRef::default(),
-            graphs: vec![generate_random_graph_root_at_center(10), generate_random_graph_root_at_center(15)],
+            graphs: vec![
+                generate_random_graph_root_at_center(10),
+                generate_random_graph_root_at_center(15),
+            ],
             current_graph: 0,
         }
     }
@@ -128,7 +133,7 @@ impl Component for GraphComponent {
                     canvas_app.draw(&self.graphs[1]);
                 }
                 false
-            },
+            }
             Msg::NodeClicked(node_index) => {
                 log!("node clicked", node_index);
                 log!("clicked node: {}", node_index);
@@ -138,15 +143,15 @@ impl Component for GraphComponent {
                 //     canvas_app.draw(&self.graphs[self.current_graph]);
                 // }
                 false
-            },
+            }
             Msg::OnCanvasClick(event) => {
                 log!("canvas clicked");
                 if let Some(msg) = self.on_canvas_click(event) {
                     ctx.link().send_message(msg);
                 }
                 false
-            },
-        }
+            }
+        };
     }
 
     fn changed(&mut self, ctx: &Context<Self>) -> bool {
@@ -159,11 +164,11 @@ impl Component for GraphComponent {
         html! {
             <>
             <div class="canvas-container" style="position: relative;">
-                <canvas  ref={self.canvas_ref_1.clone()} width="1920" height="1080" onclick={callback} 
-                 style="position: absolute; top: 0; left: 0; opacity: 1; transform-origin: center; z-index: 3;"
+                <canvas  ref={self.canvas_ref_1.clone()} width="1920" height="1080" onclick={callback}
+                 style="position: absolute; top: 0; left: 0; opacity: 1;z-index: 3;"
                 />
-                <canvas ref={self.canvas_ref_2.clone()} width="1920" height="1080" 
-                style="position: absolute; top: 0; left: 0; opacity: 0; transform-origin: center; z-index: 2;"
+                <canvas ref={self.canvas_ref_2.clone()} width="1920" height="1080"
+                style="position: absolute; top: 0; left: 0; opacity: 0; z-index: 2;"
                  />
             </div>
             </>
