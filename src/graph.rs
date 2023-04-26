@@ -68,10 +68,10 @@ impl Component for GraphComponent {
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
+        ctx.link().send_message(Msg::Draw);
         html! {
             <>
                 <canvas ref={self.canvas_ref.clone()} width="800" height="600" />
-                <button onclick={ctx.link().callback(|_| Msg::Draw)}>{"Draw"}</button>
             </>
         }
     }
