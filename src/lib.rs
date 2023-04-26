@@ -65,11 +65,13 @@ impl CanvasApp {
             // // Draw node label
             self.context.set_fill_style(&JsValue::from_str("white"));
             self.context.set_font("16px sans-serif");
+            let x = (x - (radius / 2.0)).into();
+            let y = (y + (radius / 4.0)).into();
             self.context
                 .fill_text(
-                    &format!("{:?}", index),
-                    (x - (radius / 2.0)).into(),
-                    (y + (radius / 4.0)).into(),
+                    &format!("{x}, {y}"),
+                    x,
+                    y,
                 )
                 .unwrap();
         }

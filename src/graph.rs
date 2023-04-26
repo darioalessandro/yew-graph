@@ -35,9 +35,14 @@ fn generate_random_graph_root_at_center(node_count: usize) -> NetworkGraph {
     let mut graph = NetworkGraph::new();
     let mut rng = rand::thread_rng();
 
-    for _ in 0..node_count {
-        let x = rng.gen_range(50.0, 750.0);
-        let y = rng.gen_range(50.0, 550.0);
+    let width = 1800.0;
+    let height = 900.0;
+    // Root node is always at the center
+    graph.add_node((width / 2.0, height / 2.0));
+
+    for _ in 1..node_count {
+        let x = rng.gen_range(50.0, width);
+        let y = rng.gen_range(50.0, height);
         graph.add_node((x, y));
     }
 
@@ -142,8 +147,8 @@ impl Component for GraphComponent {
             <>
                 <canvas 
                 ref={self.canvas_ref.clone()} 
-                width="800" 
-                height="600" 
+                width="1920" 
+                height="1080" 
                 onclick={callback}
                 />
             </>
