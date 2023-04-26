@@ -1,9 +1,9 @@
 pub mod graph;
 
 use graph::NetworkGraph;
-use petgraph::stable_graph::NodeIndex;
 use petgraph::visit::EdgeRef;
 use petgraph::visit::IntoNodeReferences;
+use petgraph::visit::NodeRef;
 use wasm_bindgen::prelude::*;
 use web_sys::{CanvasRenderingContext2d, HtmlCanvasElement};
 use yew::prelude::*;
@@ -26,7 +26,29 @@ impl CanvasApp {
         self.context.set_line_width(2.0);
         self.context.set_stroke_style(&JsValue::from_str("black"));
 
-        let radius = 20.0 as f64;
+        let radius = 30.0 as f64;
+
+        // Draw edges
+        self.context.set_stroke_style(&JsValue::from_str("black"));
+        self.context.set_line_width(2.0);
+
+        for edge in graph.edge_references() {
+            let source_index = edge.source();
+            let target_index = edge.target();
+
+            // Get the positions of the source and target nodes
+            let source_position = graph.node_weight(source_index).unwrap();
+            let target_position = graph.node_weight(target_index).unwrap();
+
+            // Draw the edge as a line between the source and target nodes
+            self.context.begin_path();
+            self.context
+                .move_to(source_position.0 as f64, source_position.1 as f64);
+            self.context
+                .line_to(target_position.0 as f64, target_position.1 as f64);
+            self.context.stroke();
+        }
+        
 
         for node in graph.node_references() {
             let (index, (x, y)) = node;
@@ -52,15 +74,6 @@ impl CanvasApp {
                 .unwrap();
         }
 
-        for edge in graph.edge_references() {
-            // let source = edge.source();
-            // let target = edge.target();
 
-            // // // Draw edge
-            // self.context.begin_path();
-            // self.context.move_to(source_pos.0, source_pos.1);
-            // self.context.line_to(target_pos.0, target_pos.1);
-            // self.context.stroke();
-        }
     }
 }
