@@ -9,28 +9,6 @@ use crate::CanvasApp;
 
 pub type NetworkGraph = Graph<(f32, f32), usize>;
 
-fn generate_random_graph(node_count: usize, edge_count: usize) -> NetworkGraph {
-    let mut graph = NetworkGraph::new();
-    let mut rng = rand::thread_rng();
-
-    for _ in 0..node_count {
-        let x = rng.gen_range(50.0, 750.0);
-        let y = rng.gen_range(50.0, 550.0);
-        graph.add_node((x, y));
-    }
-
-    for _ in 0..edge_count {
-        let source = rng.gen_range(0, node_count);
-        let target = rng.gen_range(0, node_count);
-
-        if source != target {
-            graph.add_edge(NodeIndex::new(source), NodeIndex::new(target), 1);
-        }
-    }
-
-    graph
-}
-
 fn generate_random_graph_root_at_center(node_count: usize) -> NetworkGraph {
     let mut graph = NetworkGraph::new();
     let mut rng = rand::thread_rng();
@@ -70,25 +48,27 @@ pub struct GraphComponent {
 
 pub enum Msg {
     Draw,
-    NodeClicked(Option<usize>),
+    NodeClicked(usize),
     OnCanvasClick(MouseEvent),
 }
 
 impl GraphComponent {
-    fn on_canvas_click(&self, event: MouseEvent) -> Msg {
+    fn on_canvas_click(&self, event: MouseEvent) -> Option<Msg> {
         let click_x = event.client_x() as f64;
         let click_y = event.client_y() as f64;
         let click_position = (click_x, click_y);
-        let node_radius = 20.0;
+        let node_radius = 30.0;
+        // log!("click position: ", click_x, click_y);
     
         let graph = &self.graphs[self.current_graph];
         for (node_index, node) in graph.node_indices().zip(graph.node_weights()) {
             let node_position = (node.0 as f64, node.1 as f64);
+            // log!("node position: ", node_position.0, node_position.1);
             if is_node_clicked(&node_position, &click_position, node_radius) {
-                return Msg::NodeClicked(Some(node_index.index()));
+                return Some(Msg::NodeClicked(node_index.index()));
             }
         }
-        Msg::NodeClicked(None)
+        None
     }
 
 }
@@ -107,30 +87,27 @@ impl Component for GraphComponent {
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         return match msg {
             Msg::Draw => {
-                log!("1");
                 if let Some(canvas) = self.canvas_ref.cast::<HtmlCanvasElement>() {
-                    log!("2");
                     let canvas_app = CanvasApp::new(canvas).unwrap();
                     canvas_app.draw(&self.graphs[self.current_graph]);
                 }
                 false
             },
-            Msg::NodeClicked(clicked_node) => {
-                log!("node clicked", clicked_node);
-                if let Some(node_index) = clicked_node {
-                    // Switch to the other graph.
-                    log!("clicked node: {}", node_index);
-                    self.current_graph = (self.current_graph + 1) % self.graphs.len();
-                    if let Some(canvas) = self.canvas_ref.cast::<HtmlCanvasElement>() {
-                        let canvas_app = CanvasApp::new(canvas).unwrap();
-                        canvas_app.draw(&self.graphs[self.current_graph]);
-                    }
+            Msg::NodeClicked(node_index) => {
+                log!("node clicked", node_index);
+                log!("clicked node: {}", node_index);
+                self.current_graph = (self.current_graph + 1) % self.graphs.len();
+                if let Some(canvas) = self.canvas_ref.cast::<HtmlCanvasElement>() {
+                    let canvas_app = CanvasApp::new(canvas).unwrap();
+                    canvas_app.draw(&self.graphs[self.current_graph]);
                 }
                 false
             },
             Msg::OnCanvasClick(event) => {
                 log!("canvas clicked");
-                self.on_canvas_click(event);
+                if let Some(msg) = self.on_canvas_click(event) {
+                    ctx.link().send_message(msg);
+                }
                 false
             },
         }

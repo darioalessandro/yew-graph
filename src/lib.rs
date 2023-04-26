@@ -1,5 +1,6 @@
 pub mod graph;
 
+use gloo_console::log;
 use graph::NetworkGraph;
 use petgraph::visit::EdgeRef;
 use petgraph::visit::IntoNodeReferences;
@@ -10,6 +11,7 @@ use yew::prelude::*;
 
 pub struct CanvasApp {
     context: CanvasRenderingContext2d,
+    canvas: HtmlCanvasElement,
 }
 
 impl CanvasApp {
@@ -19,10 +21,12 @@ impl CanvasApp {
             .unwrap()
             .dyn_into::<CanvasRenderingContext2d>()?;
 
-        Ok(Self { context })
+        Ok(Self { context, canvas })
     }
 
     pub fn draw(&self, graph: &NetworkGraph) {
+        log!("drawing");
+        self.context.clear_rect(0.0, 0.0, self.canvas.width() as f64, self.canvas.height() as f64);
         self.context.set_line_width(2.0);
         self.context.set_stroke_style(&JsValue::from_str("black"));
 
