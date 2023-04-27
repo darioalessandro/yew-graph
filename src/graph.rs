@@ -68,16 +68,16 @@ impl GraphComponent {
             if is_node_clicked(&node_position, &click_position, node_radius) {
                 let canvas1 = self.canvas_ref_1.cast::<HtmlCanvasElement>().unwrap();
                 let canvas2 = self.canvas_ref_2.cast::<HtmlCanvasElement>().unwrap();
-                let scale = 10.0; // The zoom factor.
+                let scale = 17.0; // The zoom factor.
                 let duration = 1000; // The duration of the animation in milliseconds.
                 let callback = Closure::wrap(Box::new(move || {
                     canvas1.set_attribute(
                         "style",
                         &format!(
-                            "position: absolute; top: 0; left: 0; transition: {}ms; transform: translate(-{}px, -{}px) scale({}); opacity: 0.5;",
+                            "position: absolute; top: 0; left: 0; transition: {}ms; transform: translate({}px, {}px) scale({}); opacity: 0;",
                             duration,
-                            (click_x - 400.0) * (scale - 1.0),
-                            (click_y - 300.0) * (scale - 1.0),
+                            0,
+                            1500,
                             scale
                         ),
                     )
@@ -168,7 +168,7 @@ impl Component for GraphComponent {
                  style="position: absolute; top: 0; left: 0; opacity: 1;z-index: 3;"
                 />
                 <canvas ref={self.canvas_ref_2.clone()} width="1920" height="1080"
-                style="position: absolute; top: 0; left: 0; opacity: 0; z-index: 2;"
+                style="position: absolute; top: 0; left: 0; opacity: 0; transform: translate(-1500px, 0px); z-index: 2; scale: 0;"
                  />
             </div>
             </>
