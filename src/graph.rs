@@ -41,7 +41,7 @@ impl NodeData for CompanyData {
     }
 }
 
-pub type NetworkGraph<A: NodeData> = Graph<A, usize>;
+pub type NetworkGraph<A> = Graph<A, usize>;
 
 fn generate_graph() -> NetworkGraph<CompanyData> {
     let mut graph = NetworkGraph::new();
@@ -57,11 +57,16 @@ fn generate_graph() -> NetworkGraph<CompanyData> {
     let center_x = width / 2.0;
     let center_y = height / 2.0;
     let mut angle: f32 = 0.0;
-    let areas = vec!("Recruiters", "Data Annotation", "Customers", "ERP", "AV Testing");
+    let areas = vec![
+        "Recruiters",
+        "Data Annotation",
+        "Customers",
+        "ERP",
+        "AV Testing",
+    ];
     let area_count = areas.len();
     let angle_increment = 2.0 * std::f32::consts::PI / area_count as f32;
-    
-    
+
     for area in areas {
         let x = center_x + radius * angle.cos();
         let y = center_y + radius * angle.sin();
@@ -69,7 +74,7 @@ fn generate_graph() -> NetworkGraph<CompanyData> {
         graph.add_node(area);
         angle += angle_increment;
     }
-    for i in 0..area_count+1 {
+    for i in 0..area_count + 1 {
         let root = 0; // Assuming the root node is the first node.
         graph.add_edge(NodeIndex::new(root), NodeIndex::new(i), 1);
     }
@@ -85,9 +90,7 @@ fn is_node_clicked(node_position: &(f64, f64), click_position: &(f64, f64), radi
 
 pub struct GraphComponent {
     canvas_ref_1: NodeRef,
-    canvas_ref_2: NodeRef,
-    graphs: Vec<NetworkGraph<CompanyData>>,
-    current_graph: usize,
+    graph: NetworkGraph<CompanyData>,
 }
 
 pub enum Msg {
@@ -104,12 +107,11 @@ impl GraphComponent {
         let node_radius = 50.0;
         log!("click position: ", click_x, click_y);
 
-        let graph = &self.graphs[self.current_graph];
+        let graph = &self.graph;
         for (node_index, node) in graph.node_indices().zip(graph.node_weights()) {
             let node_position = (node.x() as f64, node.y() as f64);
             if is_node_clicked(&node_position, &click_position, node_radius) {
                 let canvas1 = self.canvas_ref_1.cast::<HtmlCanvasElement>().unwrap();
-                let canvas2 = self.canvas_ref_2.cast::<HtmlCanvasElement>().unwrap();
                 let scale = 10.0; // The zoom factor.
                 let duration = 500; // The duration of the animation in milliseconds.
                 let callback = Closure::wrap(Box::new(move || {
@@ -123,17 +125,6 @@ impl GraphComponent {
                             -node_position.0,
                             0, // - canvas.height() as f64 / 2.0,
                             scale
-                        ),
-                    )
-                    .unwrap();
-                    canvas2.set_attribute(
-                        "style",
-                        &format!(
-                            "position: absolute; top: 0; left: 0; transition: {}ms; transform: scale({}); opacity: 1;",
-                            duration,
-                            // (click_x - 400.0) * (scale - 1.0),
-                            // (click_y - 300.0) * (scale - 1.0),
-                            1
                         ),
                     )
                     .unwrap();
@@ -156,12 +147,7 @@ impl Component for GraphComponent {
     fn create(ctx: &Context<Self>) -> Self {
         Self {
             canvas_ref_1: NodeRef::default(),
-            canvas_ref_2: NodeRef::default(),
-            graphs: vec![
-                generate_graph(),
-                generate_graph(),
-            ],
-            current_graph: 0,
+            graph: generate_graph(),
         }
     }
 
@@ -170,11 +156,7 @@ impl Component for GraphComponent {
             Msg::Draw => {
                 if let Some(canvas) = self.canvas_ref_1.cast::<HtmlCanvasElement>() {
                     let canvas_app = CanvasApp::new(canvas).unwrap();
-                    canvas_app.draw(&self.graphs[0]);
-                }
-                if let Some(canvas) = self.canvas_ref_2.cast::<HtmlCanvasElement>() {
-                    let canvas_app = CanvasApp::new(canvas).unwrap();
-                    canvas_app.draw(&self.graphs[1]);
+                    canvas_app.draw(&self.graph);
                 }
                 false
             }
@@ -211,9 +193,6 @@ impl Component for GraphComponent {
                 <canvas  ref={self.canvas_ref_1.clone()} width="1800" height="900" onclick={callback}
                  style="position: absolute; top: 0; left: 0; opacity: 1;z-index: 3;"
                 />
-                <canvas ref={self.canvas_ref_2.clone()} width="1800" height="900"
-                style="position: absolute; top: 0; left: 0; opacity: 0; transform: translate(-1500px, 0px); z-index: 2; scale: 0;"
-                 />
             </div>
             </>
         }

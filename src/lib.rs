@@ -3,6 +3,8 @@ pub mod graph;
 use gloo_console::log;
 use graph::NetworkGraph;
 use graph::NodeData;
+use petgraph::adj::IndexType;
+use petgraph::adj::NodeIndex;
 use petgraph::visit::EdgeRef;
 use petgraph::visit::IntoNodeReferences;
 use petgraph::visit::NodeRef;
@@ -26,7 +28,9 @@ impl CanvasApp {
         Ok(Self { context, canvas })
     }
 
-    pub fn draw<A: NodeData> (&self, graph: &NetworkGraph<A>) {
+    // pub fn drill(&self, node: )
+
+    pub fn draw<A: NodeData>(&self, graph: &NetworkGraph<A>) {
         log!("drawing");
         self.context.clear_rect(
             0.0,
@@ -34,8 +38,14 @@ impl CanvasApp {
             self.canvas.width() as f64,
             self.canvas.height() as f64,
         );
-        self.context.set_fill_style(&JsValue::from_str(BACKGROUND_COLOR));
-        self.context.fill_rect(0.0, 0.0, self.canvas.width() as f64, self.canvas.height() as f64);
+        self.context
+            .set_fill_style(&JsValue::from_str(BACKGROUND_COLOR));
+        self.context.fill_rect(
+            0.0,
+            0.0,
+            self.canvas.width() as f64,
+            self.canvas.height() as f64,
+        );
         self.context.set_line_width(2.0);
         self.context.set_stroke_style(&JsValue::from_str("white"));
 
@@ -45,15 +55,21 @@ impl CanvasApp {
         self.context.set_stroke_style(&JsValue::from_str("white"));
         self.context.set_line_width(6.0);
 
-        for edge in graph.edge_references() {
+        // Assume that node 0 is the root.
+        let root = graph.node_references().next().unwrap();
+
+        for edge in graph.edges(root.0) {
             let source_index = edge.source();
             let target_index = edge.target();
-
             // Get the positions of the source and target nodes
             let source_position = graph.node_weight(source_index).unwrap();
             let target_position = graph.node_weight(target_index).unwrap();
 
-            log!("adding edge from {:?} to {:?}", source_position.title(), target_position.title());
+            log!(
+                "adding edge from {:?} to {:?}",
+                source_position.title(),
+                target_position.title()
+            );
 
             // Draw the edge as a line between the source and target nodes
             self.context.begin_path();
