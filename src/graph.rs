@@ -68,15 +68,17 @@ impl GraphComponent {
             if is_node_clicked(&node_position, &click_position, node_radius) {
                 let canvas1 = self.canvas_ref_1.cast::<HtmlCanvasElement>().unwrap();
                 let canvas2 = self.canvas_ref_2.cast::<HtmlCanvasElement>().unwrap();
-                let scale = 17.0; // The zoom factor.
+                let scale = 10.0; // The zoom factor.
                 let duration = 500; // The duration of the animation in milliseconds.
                 let callback = Closure::wrap(Box::new(move || {
                     canvas1.set_attribute(
                         "style",
                         &format!(
-                            "transition-timing-function: ease-in-out; position: absolute; top: 0; left: 0; transition: {}ms; transform: translate({}px, {}px) scale({}); opacity: 0;",
+                            "position: absolute; top: 0; left: 0; transition: {}ms; transform-origin: {}px {}px; transform: translate({}px, {}px) scale({}); opacity: 0.8;",
                             duration,
-                            0,
+                            node_position.0,
+                            node_position.1,
+                            -node_position.0,
                             0,
                             scale
                         ),
@@ -85,7 +87,7 @@ impl GraphComponent {
                     canvas2.set_attribute(
                         "style",
                         &format!(
-                            "transition-timing-function: ease-in-out; position: absolute; top: 0; left: 0; transition: {}ms; transform: scale({}); opacity: 1;",
+                            "position: absolute; top: 0; left: 0; transition: {}ms; transform: scale({}); opacity: 1;",
                             duration,
                             // (click_x - 400.0) * (scale - 1.0),
                             // (click_y - 300.0) * (scale - 1.0),
@@ -164,10 +166,10 @@ impl Component for GraphComponent {
         html! {
             <>
             <div class="canvas-container" style="position: relative;">
-                <canvas  ref={self.canvas_ref_1.clone()} width="1920" height="900" onclick={callback}
+                <canvas  ref={self.canvas_ref_1.clone()} width="1800" height="900" onclick={callback}
                  style="position: absolute; top: 0; left: 0; opacity: 1;z-index: 3;"
                 />
-                <canvas ref={self.canvas_ref_2.clone()} width="1920" height="900"
+                <canvas ref={self.canvas_ref_2.clone()} width="1800" height="900"
                 style="position: absolute; top: 0; left: 0; opacity: 0; transform: translate(-1500px, 0px); z-index: 2; scale: 0;"
                  />
             </div>
