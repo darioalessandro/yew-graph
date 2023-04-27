@@ -9,28 +9,70 @@ use yew::prelude::*;
 
 use crate::CanvasApp;
 
-pub type NetworkGraph = Graph<(f32, f32), usize>;
+pub trait NodeData {
+    fn title(&self) -> String;
+    fn x(&self) -> f32;
+    fn y(&self) -> f32;
+}
 
-fn generate_random_graph_root_at_center(node_count: usize) -> NetworkGraph {
-    let mut graph = NetworkGraph::new();
-    let mut rng = rand::thread_rng();
+struct CompanyData {
+    title: String,
+    x: f32,
+    y: f32,
+}
 
-    let width = 1800.0;
-    let height = 900.0;
-    // Root node is always at the center
-    graph.add_node((width / 2.0, height / 2.0));
+impl CompanyData {
+    fn new(title: String, x: f32, y: f32) -> Self {
+        Self { title, x, y }
+    }
+}
 
-    for _ in 1..node_count {
-        let x = rng.gen_range(50.0, width);
-        let y = rng.gen_range(50.0, height);
-        graph.add_node((x, y));
+impl NodeData for CompanyData {
+    fn title(&self) -> String {
+        self.title.clone()
     }
 
-    for i in 1..node_count {
+    fn x(&self) -> f32 {
+        self.x
+    }
+
+    fn y(&self) -> f32 {
+        self.y
+    }
+}
+
+pub type NetworkGraph<A: NodeData> = Graph<A, usize>;
+
+fn generate_graph() -> NetworkGraph<CompanyData> {
+    let mut graph = NetworkGraph::new();
+    let width = 1800.0;
+    let height = 900.0;
+
+    // render node at the center
+    let center_company = CompanyData::new("Security Union".to_string(), width / 2.0, height / 2.0);
+    graph.add_node(center_company);
+
+    // render the rest of the nodes around the center node clockwise, starting from the top, with a radius of 50
+    let radius = 300.0;
+    let center_x = width / 2.0;
+    let center_y = height / 2.0;
+    let mut angle: f32 = 0.0;
+    let areas = vec!("Recruiters", "Data Annotation", "Customers", "ERP", "AV Testing");
+    let area_count = areas.len();
+    let angle_increment = 2.0 * std::f32::consts::PI / area_count as f32;
+    
+    
+    for area in areas {
+        let x = center_x + radius * angle.cos();
+        let y = center_y + radius * angle.sin();
+        let area = CompanyData::new(area.to_string(), x, y);
+        graph.add_node(area);
+        angle += angle_increment;
+    }
+    for i in 0..area_count+1 {
         let root = 0; // Assuming the root node is the first node.
         graph.add_edge(NodeIndex::new(root), NodeIndex::new(i), 1);
     }
-
     graph
 }
 
@@ -44,7 +86,7 @@ fn is_node_clicked(node_position: &(f64, f64), click_position: &(f64, f64), radi
 pub struct GraphComponent {
     canvas_ref_1: NodeRef,
     canvas_ref_2: NodeRef,
-    graphs: Vec<NetworkGraph>,
+    graphs: Vec<NetworkGraph<CompanyData>>,
     current_graph: usize,
 }
 
@@ -64,7 +106,7 @@ impl GraphComponent {
 
         let graph = &self.graphs[self.current_graph];
         for (node_index, node) in graph.node_indices().zip(graph.node_weights()) {
-            let node_position = (node.0 as f64, node.1 as f64);
+            let node_position = (node.x() as f64, node.y() as f64);
             if is_node_clicked(&node_position, &click_position, node_radius) {
                 let canvas1 = self.canvas_ref_1.cast::<HtmlCanvasElement>().unwrap();
                 let canvas2 = self.canvas_ref_2.cast::<HtmlCanvasElement>().unwrap();
@@ -79,7 +121,7 @@ impl GraphComponent {
                             node_position.0,
                             node_position.1,
                             -node_position.0,
-                            0,
+                            0, // - canvas.height() as f64 / 2.0,
                             scale
                         ),
                     )
@@ -116,8 +158,8 @@ impl Component for GraphComponent {
             canvas_ref_1: NodeRef::default(),
             canvas_ref_2: NodeRef::default(),
             graphs: vec![
-                generate_random_graph_root_at_center(10),
-                generate_random_graph_root_at_center(15),
+                generate_graph(),
+                generate_graph(),
             ],
             current_graph: 0,
         }
