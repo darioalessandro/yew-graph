@@ -9,7 +9,7 @@ use petgraph::visit::EdgeRef;
 use petgraph::visit::IntoNodeReferences;
 use petgraph::visit::NodeRef;
 use wasm_bindgen::prelude::*;
-use web_sys::{CanvasRenderingContext2d, HtmlCanvasElement};
+use web_sys::{CanvasRenderingContext2d, HtmlCanvasElement, OffscreenCanvas};
 use yew::prelude::*;
 
 const BACKGROUND_COLOR: &str = "#354343";
@@ -32,28 +32,36 @@ impl CanvasApp {
 
     pub fn draw<A: NodeData>(&self, graph: &NetworkGraph<A>) {
         log!("drawing");
-        self.context.clear_rect(
+        // Create offscreen canvas at 2x the size than the current canvas
+        let offscreen_canvas =
+            OffscreenCanvas::new(self.canvas.width() * 2, self.canvas.height() * 2).unwrap();
+        let offscreen_context = offscreen_canvas
+            .get_context("2d")
+            .unwrap()
+            .unwrap()
+            .unchecked_into::<CanvasRenderingContext2d>();
+
+        offscreen_context.clear_rect(
             0.0,
             0.0,
             self.canvas.width() as f64,
             self.canvas.height() as f64,
         );
-        self.context
-            .set_fill_style(&JsValue::from_str(BACKGROUND_COLOR));
-        self.context.fill_rect(
+        offscreen_context.set_fill_style(&JsValue::from_str(BACKGROUND_COLOR));
+        offscreen_context.fill_rect(
             0.0,
             0.0,
             self.canvas.width() as f64,
             self.canvas.height() as f64,
         );
-        self.context.set_line_width(2.0);
-        self.context.set_stroke_style(&JsValue::from_str("white"));
+        offscreen_context.set_line_width(2.0);
+        offscreen_context.set_stroke_style(&JsValue::from_str("white"));
 
         let radius = 90.0 as f64;
 
         // Draw edges
-        self.context.set_stroke_style(&JsValue::from_str("white"));
-        self.context.set_line_width(6.0);
+        offscreen_context.set_stroke_style(&JsValue::from_str("white"));
+        offscreen_context.set_line_width(6.0);
 
         // Assume that node 0 is the root.
         let root = graph.node_references().next().unwrap();
@@ -72,36 +80,34 @@ impl CanvasApp {
             );
 
             // Draw the edge as a line between the source and target nodes
-            self.context.begin_path();
-            self.context
-                .move_to(source_position.x() as f64, source_position.y() as f64);
-            self.context
-                .line_to(target_position.x() as f64, target_position.y() as f64);
-            self.context.stroke();
-        }
+            offscreen_context.begin_path();
+            offscreen_context.move_to(source_position.x() as f64, source_position.y() as f64);
+            offscreen_context.line_to(target_position.x() as f64, target_position.y() as f64);
+            offscreen_context.stroke();
 
-        for node in graph.node_references() {
-            let (index, data) = node;
-            let x = data.x() as f64;
-            let y = data.y() as f64;
+            let x = target_position.x() as f64;
+            let y = target_position.y() as f64;
             // // Draw node
-            self.context.set_fill_style(&JsValue::from_str("white"));
-            self.context.begin_path();
-            self.context
+            offscreen_context.set_fill_style(&JsValue::from_str("white"));
+            offscreen_context.begin_path();
+            offscreen_context
                 .arc(x as f64, y as f64, radius, 0.0, 2.0 * std::f64::consts::PI)
                 .unwrap();
-            self.context.fill();
+            offscreen_context.fill();
 
             // // Draw node label
-            self.context.set_fill_style(&JsValue::from_str("black"));
-            self.context.set_font("bold 20px sans-serif");
-            let text = data.title();
-            let metrics = self.context.measure_text(&text).unwrap();
+            offscreen_context.set_fill_style(&JsValue::from_str("black"));
+            offscreen_context.set_font("bold 20px sans-serif");
+            let text = target_position.title();
+            let metrics = offscreen_context.measure_text(&text).unwrap();
             let text_width = metrics.width();
             let text_height = 20.0;
             let x = x - (text_width / 2.0);
             let y = y + (text_height / 2.0);
-            self.context.fill_text(&text, x, y).unwrap();
+            offscreen_context.fill_text(&text, x, y).unwrap();
         }
+        self.context
+            .draw_image_with_offscreen_canvas(&offscreen_canvas, 0.0, 0.0)
+            .unwrap();
     }
 }
