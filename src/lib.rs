@@ -28,9 +28,7 @@ impl CanvasApp {
         Ok(Self { context, canvas })
     }
 
-    // pub fn drill(&self, node: )
-
-    pub fn draw<A: NodeData>(&self, graph: &NetworkGraph<A>) {
+    pub fn draw<A: NodeData>(&self, graph: &NetworkGraph<A>, node: &str) {
         log!("drawing");
         // Create offscreen canvas at 2x the size than the current canvas
         let offscreen_canvas =
@@ -63,8 +61,7 @@ impl CanvasApp {
         offscreen_context.set_stroke_style(&JsValue::from_str("white"));
         offscreen_context.set_line_width(6.0);
 
-        // Assume that node 0 is the root.
-        let root = graph.node_references().next().unwrap();
+        let root = graph.node_references().find(|n| n.1.title() == node).unwrap();
 
         for edge in graph.edges(root.0) {
             let source_index = edge.source();

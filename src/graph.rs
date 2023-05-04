@@ -15,7 +15,9 @@ pub trait NodeData {
     fn y(&self) -> f32;
 }
 
-struct CompanyData {
+pub type NetworkGraph<A> = Graph<A, usize>;
+
+pub struct CompanyData {
     title: String,
     x: f32,
     y: f32,
@@ -41,9 +43,7 @@ impl NodeData for CompanyData {
     }
 }
 
-pub type NetworkGraph<A> = Graph<A, usize>;
-
-fn generate_graph() -> NetworkGraph<CompanyData> {
+pub fn generate_graph() -> NetworkGraph<CompanyData> {
     let mut graph = NetworkGraph::new();
     let width = 1800.0;
     let height = 900.0;
@@ -189,6 +189,7 @@ fn generate_graph() -> NetworkGraph<CompanyData> {
     graph
 }
 
+
 fn is_node_clicked(node_position: &(f64, f64), click_position: &(f64, f64), radius: f64) -> bool {
     let dx = node_position.0 - click_position.0;
     let dy = node_position.1 - click_position.1;
@@ -199,6 +200,11 @@ fn is_node_clicked(node_position: &(f64, f64), click_position: &(f64, f64), radi
 pub struct GraphComponent {
     canvas_ref_1: NodeRef,
     graph: NetworkGraph<CompanyData>,
+}
+
+#[derive(PartialEq, Properties, Clone)]
+pub struct GraphComponentProps {
+    pub node: String,
 }
 
 pub enum Msg {
@@ -250,7 +256,7 @@ impl GraphComponent {
 }
 impl Component for GraphComponent {
     type Message = Msg;
-    type Properties = ();
+    type Properties = GraphComponentProps;
 
     fn create(ctx: &Context<Self>) -> Self {
         Self {
@@ -264,7 +270,8 @@ impl Component for GraphComponent {
             Msg::Draw => {
                 if let Some(canvas) = self.canvas_ref_1.cast::<HtmlCanvasElement>() {
                     let canvas_app = CanvasApp::new(canvas).unwrap();
-                    canvas_app.draw(&self.graph);
+                    let node = ctx.props().node.clone();
+                    canvas_app.draw(&self.graph, &node);
                 }
                 false
             }
