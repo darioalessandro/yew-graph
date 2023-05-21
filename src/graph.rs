@@ -1,3 +1,5 @@
+use std::rc::Rc;
+
 use gloo_console::log;
 use petgraph::{stable_graph::NodeIndex, Graph};
 use rand::Rng;
@@ -6,8 +8,30 @@ use wasm_bindgen::{prelude::Closure, JsCast, JsValue};
 use web_sys::window;
 use web_sys::HtmlCanvasElement;
 use yew::prelude::*;
+use yew_router::prelude::*;
 
+use crate::graph;
 use crate::CanvasApp;
+use crate::Route;
+
+#[derive(Clone, Debug, Properties)]
+pub struct ContextData {
+    pub graph: NetworkGraph<CompanyData>,
+}
+
+impl PartialEq for ContextData {
+    fn eq(&self, other: &Self) -> bool {
+        false
+    }
+}
+
+impl Reducible for ContextData {
+    type Action = ContextData;
+
+    fn reduce(self: Rc<Self>, action: Self::Action) -> Rc<Self> {
+        action.clone().into()
+    }
+}
 
 pub trait NodeData {
     fn title(&self) -> String;
@@ -17,6 +41,7 @@ pub trait NodeData {
 
 pub type NetworkGraph<A> = Graph<A, usize>;
 
+#[derive(Clone, Debug, PartialEq)]
 pub struct CompanyData {
     title: String,
     x: f32,
@@ -189,7 +214,6 @@ pub fn generate_graph() -> NetworkGraph<CompanyData> {
     graph
 }
 
-
 fn is_node_clicked(node_position: &(f64, f64), click_position: &(f64, f64), radius: f64) -> bool {
     let dx = node_position.0 - click_position.0;
     let dy = node_position.1 - click_position.1;
@@ -199,7 +223,6 @@ fn is_node_clicked(node_position: &(f64, f64), click_position: &(f64, f64), radi
 
 pub struct GraphComponent {
     canvas_ref_1: NodeRef,
-    graph: NetworkGraph<CompanyData>,
 }
 
 #[derive(PartialEq, Properties, Clone)]
@@ -209,46 +232,52 @@ pub struct GraphComponentProps {
 
 pub enum Msg {
     Draw,
-    NodeClicked(usize),
+    NodeClicked(CompanyData),
     OnCanvasClick(MouseEvent),
 }
 
 impl GraphComponent {
-    fn on_canvas_click(&self, event: MouseEvent) -> Option<Msg> {
+    fn on_canvas_click(&self, event: MouseEvent, ctx: &Context<Self>) -> Option<Msg> {
         let click_x = event.client_x() as f64;
         let click_y = event.client_y() as f64;
         let click_position = (click_x, click_y);
         let node_radius = 50.0;
         log!("click position: ", click_x, click_y);
 
-        let graph = &self.graph;
+        log!("on canvas click before");
+        let (graph, _) = ctx
+            .link()
+            .context::<UseReducerHandle<ContextData>>(Callback::noop())
+            .expect("context to be set");
+        log!("on canvas click after");
+        let graph = &graph.graph;
         for (node_index, node) in graph.node_indices().zip(graph.node_weights()) {
             let node_position = (node.x() as f64, node.y() as f64);
             if is_node_clicked(&node_position, &click_position, node_radius) {
-                let canvas1 = self.canvas_ref_1.cast::<HtmlCanvasElement>().unwrap();
-                let scale = 10.0; // The zoom factor.
-                let duration = 500; // The duration of the animation in milliseconds.
-                let callback = Closure::wrap(Box::new(move || {
-                    canvas1.set_attribute(
-                        "style",
-                        &format!(
-                            "position: absolute; top: 0; left: 0; transition: {}ms; transform-origin: {}px {}px; transform: translate({}px, {}px) scale({}); opacity: 0.8;",
-                            duration,
-                            node_position.0,
-                            node_position.1,
-                            -node_position.0,
-                            0, // - canvas.height() as f64 / 2.0,
-                            scale
-                        ),
-                    )
-                    .unwrap();
-                }) as Box<dyn FnMut()>);
-                window()
-                    .unwrap()
-                    .request_animation_frame(callback.as_ref().unchecked_ref())
-                    .unwrap();
-                callback.forget();
-                return Some(Msg::NodeClicked(node_index.index()));
+                // let canvas1 = self.canvas_ref_1.cast::<HtmlCanvasElement>().unwrap();
+                // let scale = 10.0; // The zoom factor.
+                // let duration = 500; // The duration of the animation in milliseconds.
+                // let callback = Closure::wrap(Box::new(move || {
+                //     canvas1.set_attribute(
+                //         "style",
+                //         &format!(
+                //             "position: absolute; top: 0; left: 0; transition: {}ms; transform-origin: {}px {}px; transform: translate({}px, {}px) scale({}); opacity: 0.8;",
+                //             duration,
+                //             node_position.0,
+                //             node_position.1,
+                //             -node_position.0,
+                //             0, // - canvas.height() as f64 / 2.0,
+                //             scale
+                //         ),
+                //     )
+                //     .unwrap();
+                // }) as Box<dyn FnMut()>);
+                // window()
+                //     .unwrap()
+                //     .request_animation_frame(callback.as_ref().unchecked_ref())
+                //     .unwrap();
+                // callback.forget();
+                return Some(Msg::NodeClicked(node.clone()));
             }
         }
         None
@@ -261,7 +290,6 @@ impl Component for GraphComponent {
     fn create(ctx: &Context<Self>) -> Self {
         Self {
             canvas_ref_1: NodeRef::default(),
-            graph: generate_graph(),
         }
     }
 
@@ -271,23 +299,28 @@ impl Component for GraphComponent {
                 if let Some(canvas) = self.canvas_ref_1.cast::<HtmlCanvasElement>() {
                     let canvas_app = CanvasApp::new(canvas).unwrap();
                     let node = ctx.props().node.clone();
-                    canvas_app.draw(&self.graph, &node);
+                    log!("before draw");
+                    let (graph, _) = ctx
+                        .link()
+                        .context::<UseReducerHandle<ContextData>>(Callback::noop())
+                        .expect("context to be set");
+                    log!("after context");
+                    let graph = &graph.graph;
+                    canvas_app.draw(graph, &node);
                 }
                 false
             }
-            Msg::NodeClicked(node_index) => {
-                log!("node clicked", node_index);
-                log!("clicked node: {}", node_index);
-                // self.current_graph = (self.current_graph + 1) % self.graphs.len();
-                // if let Some(canvas) = self.canvas_ref_1.cast::<HtmlCanvasElement>() {
-                //     let canvas_app = CanvasApp::new(canvas).unwrap();
-                //     canvas_app.draw(&self.graphs[self.current_graph]);
-                // }
-                false
+            Msg::NodeClicked(company_data) => {
+                log!("node clicked", &company_data.title);
+                let history = ctx.link().history().unwrap();
+                history.push(Route::ShowNode {
+                    title: company_data.title,
+                });
+                true
             }
             Msg::OnCanvasClick(event) => {
                 log!("canvas clicked");
-                if let Some(msg) = self.on_canvas_click(event) {
+                if let Some(msg) = self.on_canvas_click(event, ctx) {
                     ctx.link().send_message(msg);
                 }
                 false

@@ -11,6 +11,18 @@ use petgraph::visit::NodeRef;
 use wasm_bindgen::prelude::*;
 use web_sys::{CanvasRenderingContext2d, HtmlCanvasElement, OffscreenCanvas};
 use yew::prelude::*;
+use yew_router::prelude::*;
+
+#[derive(Debug, Clone, PartialEq, Routable)]
+pub enum Route {
+    #[at("/")]
+    Root,
+    #[not_found]
+    #[at("/404")]
+    NotFound,
+    #[at("/:title")]
+    ShowNode { title: String },
+}
 
 const BACKGROUND_COLOR: &str = "#354343";
 pub struct CanvasApp {
@@ -61,7 +73,10 @@ impl CanvasApp {
         offscreen_context.set_stroke_style(&JsValue::from_str("white"));
         offscreen_context.set_line_width(6.0);
 
-        let root = graph.node_references().find(|n| n.1.title() == node).unwrap();
+        let root = graph
+            .node_references()
+            .find(|n| n.1.title() == node)
+            .unwrap();
 
         for edge in graph.edges(root.0) {
             let source_index = edge.source();
