@@ -13,6 +13,8 @@ use web_sys::{CanvasRenderingContext2d, HtmlCanvasElement, OffscreenCanvas};
 use yew::prelude::*;
 use yew_router::prelude::*;
 
+use crate::graph::CompanyData;
+
 #[derive(Debug, Clone, PartialEq, Routable)]
 pub enum Route {
     #[at("/")]
@@ -67,8 +69,6 @@ impl CanvasApp {
         offscreen_context.set_line_width(2.0);
         offscreen_context.set_stroke_style(&JsValue::from_str("white"));
 
-        let radius = 90.0 as f64;
-
         // Draw edges
         offscreen_context.set_stroke_style(&JsValue::from_str("white"));
         offscreen_context.set_line_width(6.0);
@@ -78,12 +78,51 @@ impl CanvasApp {
             .find(|n| n.1.title() == node)
             .unwrap();
 
-        for edge in graph.edges(root.0) {
+        // create new graph:
+        let mut new_graph = NetworkGraph::new();
+        let width = 1800.0;
+        let height = 900.0;
+
+        // render node at the center
+        let center_company = CompanyData::new(root.1.title(), width / 2.0, height / 2.0);
+        new_graph.add_node(center_company);
+        let center_x = width / 2.0;
+        let center_y = height / 2.0;
+        let radius = 300.0;
+        let mut angle: f32 = 0.0;
+
+
+        {
+            let area_count = graph.edges(root.0).count();
+            let angle_increment = 2.0 * std::f32::consts::PI / area_count as f32;
+            for edge in graph.edges(root.0) {
+                let target_index = edge.target();
+                let target_position = graph.node_weight(target_index).unwrap();
+                let x = center_x + radius * angle.cos();
+                let y = center_y + radius * angle.sin();
+                let area = CompanyData::new(target_position.title(), x, y);
+                log!("Adding node: ", area.title(), "at ", x, ", ", y);
+                new_graph.add_node(area);
+                angle += angle_increment;
+            }
+            for i in 0..area_count + 1 {
+                let root = 0; // Assuming the root node is the first node.
+                new_graph.add_edge(NodeIndex::new(root), NodeIndex::new(i), 1);
+                log!("Adding edge from ", root, " to ", i);
+            }
+        }
+
+        let radius = 90.0 as f64;
+        let root = new_graph
+            .node_references()
+            .find(|n| n.1.title() == node)
+            .unwrap();
+        for edge in new_graph.edges(root.0) {
             let source_index = edge.source();
             let target_index = edge.target();
             // Get the positions of the source and target nodes
-            let source_position = graph.node_weight(source_index).unwrap();
-            let target_position = graph.node_weight(target_index).unwrap();
+            let source_position = new_graph.node_weight(source_index).unwrap();
+            let target_position = new_graph.node_weight(target_index).unwrap();
 
             log!(
                 "adding edge from {:?} to {:?}",
@@ -103,7 +142,7 @@ impl CanvasApp {
             offscreen_context.set_fill_style(&JsValue::from_str("white"));
             offscreen_context.begin_path();
             offscreen_context
-                .arc(x as f64, y as f64, radius, 0.0, 2.0 * std::f64::consts::PI)
+                .arc(x as f64, y as f64, radius.into(), 0.0, 2.0 * std::f64::consts::PI)
                 .unwrap();
             offscreen_context.fill();
 

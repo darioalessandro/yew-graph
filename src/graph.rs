@@ -49,7 +49,7 @@ pub struct CompanyData {
 }
 
 impl CompanyData {
-    fn new(title: String, x: f32, y: f32) -> Self {
+    pub fn new(title: String, x: f32, y: f32) -> Self {
         Self { title, x, y }
     }
 }
@@ -126,9 +126,7 @@ pub fn generate_graph() -> NetworkGraph<CompanyData> {
         let area_count = areas.len();
         let angle_increment = 2.0 * std::f32::consts::PI / area_count as f32;
         for area in areas {
-            let x = center_x + radius * angle.cos();
-            let y = center_y + radius * angle.sin();
-            let area = CompanyData::new(area.to_string(), x, y);
+            let area = CompanyData::new(area.to_string(), 0.0, 0.0);
             graph.add_node(area);
             angle += angle_increment;
         }
