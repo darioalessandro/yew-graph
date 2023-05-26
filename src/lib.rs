@@ -37,6 +37,7 @@ const BACKGROUND_COLOR: &str = "#354343";
 pub struct CanvasApp {
     context: CanvasRenderingContext2d,
     canvas: HtmlCanvasElement,
+    graph: Option<NetworkGraph<CompanyData>>,
 }
 
 impl CanvasApp {
@@ -46,10 +47,10 @@ impl CanvasApp {
             .unwrap()
             .dyn_into::<CanvasRenderingContext2d>()?;
 
-        Ok(Self { context, canvas })
+        Ok(Self { context, canvas, graph: None })
     }
 
-    pub fn draw<A: NodeData>(&self, graph: &NetworkGraph<A>, node: &str) {
+    pub fn draw<A: NodeData>(mut self, graph: &NetworkGraph<A>, node: &str) -> CanvasApp {
         log!("drawing");
         // Create offscreen canvas at 2x the size than the current canvas
         let offscreen_canvas =
@@ -159,5 +160,10 @@ impl CanvasApp {
         self.context
             .draw_image_with_offscreen_canvas(&offscreen_canvas, 0.0, 0.0)
             .unwrap();
+
+        Self {
+            context: self.context,
+            canvas: self.canvas,
+            graph: Some(new_graph)}
     }
 }

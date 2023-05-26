@@ -202,6 +202,7 @@ fn is_node_clicked(node_position: &(f64, f64), click_position: &(f64, f64), radi
 
 pub struct GraphComponent {
     canvas_ref_1: NodeRef,
+    canvas_app: Option<CanvasApp>,
 }
 
 #[derive(PartialEq, Properties, Clone)]
@@ -216,7 +217,7 @@ pub enum Msg {
 }
 
 impl GraphComponent {
-    fn on_canvas_click(&self, event: MouseEvent, ctx: &Context<Self>) -> Option<Msg> {
+    fn on_canvas_click(&self, event: MouseEvent, ctx: &Context<Self>, canvas: &CanvasApp) -> Option<Msg> {
         let click_x = event.client_x() as f64;
         let click_y = event.client_y() as f64;
         let click_position = (click_x, click_y);
@@ -224,12 +225,8 @@ impl GraphComponent {
         log!("click position: ", click_x, click_y);
 
         log!("on canvas click before");
-        let (graph, _) = ctx
-            .link()
-            .context::<UseReducerHandle<ContextData>>(Callback::noop())
-            .expect("context to be set");
+        let graph = canvas.graph.clone().unwrap();
         log!("on canvas click after");
-        let graph = &graph.graph;
         for (node_index, node) in graph.node_indices().zip(graph.node_weights()) {
             let node_position = (node.x() as f64, node.y() as f64);
             if is_node_clicked(&node_position, &click_position, node_radius) {
@@ -270,6 +267,7 @@ impl Component for GraphComponent {
         log!("on create");
         Self {
             canvas_ref_1: NodeRef::default(),
+            canvas_app: None
         }
     }
 
@@ -279,7 +277,7 @@ impl Component for GraphComponent {
             Msg::Draw => {
                 log!("draw");
                 if let Some(canvas) = self.canvas_ref_1.cast::<HtmlCanvasElement>() {
-                    let canvas_app = CanvasApp::new(canvas).unwrap();
+                    let canvas = CanvasApp::new(canvas).unwrap();
                     let node = ctx.props().node.clone();
                     log!("before draw");
                     let (graph, _) = ctx
@@ -288,7 +286,8 @@ impl Component for GraphComponent {
                         .expect("context to be set");
                     log!("after context");
                     let graph = &graph.graph;
-                    canvas_app.draw(graph, &node);
+                    let canvas = canvas.draw(graph, &node);
+                    self.canvas_app = Some(canvas);
                 }
                 false
             }
@@ -296,14 +295,16 @@ impl Component for GraphComponent {
                 log!("node clicked", &company_data.title);
                 let history = ctx.link().history().unwrap();
                 history.push(Route::ShowNode {
-                    title: "Data%20Annotation".to_string(),
+                    title: company_data.title.to_string(),
                 });
                 false
             }
             Msg::OnCanvasClick(event) => {
                 log!("canvas clicked");
-                if let Some(msg) = self.on_canvas_click(event, ctx) {
-                    ctx.link().send_message(msg);
+                if let Some(canvas) = &self.canvas_app {
+                        if let Some(msg) = self.on_canvas_click(event, ctx, canvas) {
+                            ctx.link().send_message(msg);
+                        }
                 }
                 false
             }

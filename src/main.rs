@@ -37,7 +37,6 @@ fn switch(routes: &Route) -> Html {
         Route::Root => html! { <GraphComponent node={"Security Union".to_string()}/> },
         Route::ShowNode { title } => {
             let decoded = decode(&title).unwrap();
-            log!("decoded:", decoded.to_string());
             html! { <GraphComponent node={decoded.to_string()}/>
             }
         }
