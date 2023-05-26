@@ -151,62 +151,43 @@ pub fn generate_graph() -> NetworkGraph<CompanyData> {
     }
     // add data annotation
     {
-        let area_count = data_annotation.len();
-        let angle_increment = 2.0 * std::f32::consts::PI / area_count as f32;
         let data_annotation_node = 3;
+        let area_count = data_annotation.len();
         for data_annotation in data_annotation {
-            let x = center_x + radius * angle.cos();
-            let y = center_y + radius * angle.sin();
-            let data_annotation = CompanyData::new(data_annotation.to_string(), x, y);
+            let data_annotation = CompanyData::new(data_annotation.to_string(), 0.0, 0.0);
             let data_annotation_index = graph.add_node(data_annotation);
             graph.add_edge(
                 NodeIndex::new(data_annotation_node),
                 data_annotation_index,
                 1,
             );
-            angle += angle_increment;
         }
     }
     // add customers
     {
-        let area_count = customers.len();
-        let angle_increment = 2.0 * std::f32::consts::PI / area_count as f32;
         let customers_node = 4;
         for customer in customers {
-            let x = center_x + radius * angle.cos();
-            let y = center_y + radius * angle.sin();
-            let customer = CompanyData::new(customer.to_string(), x, y);
+            let customer = CompanyData::new(customer.to_string(), 0.0, 0.0);
             let customer_index = graph.add_node(customer);
             graph.add_edge(NodeIndex::new(customers_node), customer_index, 1);
-            angle += angle_increment;
         }
     }
     // add erp
     {
-        let area_count = erp.len();
-        let angle_increment = 2.0 * std::f32::consts::PI / area_count as f32;
         let erp_node = 5;
         for erp in erp {
-            let x = center_x + radius * angle.cos();
-            let y = center_y + radius * angle.sin();
-            let erp = CompanyData::new(erp.to_string(), x, y);
+            let erp = CompanyData::new(erp.to_string(), 0.0, 0.0);
             let erp_index = graph.add_node(erp);
             graph.add_edge(NodeIndex::new(erp_node), erp_index, 1);
-            angle += angle_increment;
         }
     }
     // add av_testing
     {
-        let area_count = av_testing.len();
-        let angle_increment = 2.0 * std::f32::consts::PI / area_count as f32;
         let av_testing_node = 6;
         for av_testing in av_testing {
-            let x = center_x + radius * angle.cos();
-            let y = center_y + radius * angle.sin();
-            let av_testing = CompanyData::new(av_testing.to_string(), x, y);
+            let av_testing = CompanyData::new(av_testing.to_string(), 0.0, 0.0);
             let av_testing_index = graph.add_node(av_testing);
             graph.add_edge(NodeIndex::new(av_testing_node), av_testing_index, 1);
-            angle += angle_increment;
         }
     }
     graph
@@ -286,14 +267,17 @@ impl Component for GraphComponent {
     type Properties = GraphComponentProps;
 
     fn create(ctx: &Context<Self>) -> Self {
+        log!("on create");
         Self {
             canvas_ref_1: NodeRef::default(),
         }
     }
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
+        log!("on udpate");
         return match msg {
             Msg::Draw => {
+                log!("draw");
                 if let Some(canvas) = self.canvas_ref_1.cast::<HtmlCanvasElement>() {
                     let canvas_app = CanvasApp::new(canvas).unwrap();
                     let node = ctx.props().node.clone();
@@ -312,9 +296,9 @@ impl Component for GraphComponent {
                 log!("node clicked", &company_data.title);
                 let history = ctx.link().history().unwrap();
                 history.push(Route::ShowNode {
-                    title: company_data.title,
+                    title: "Data%20Annotation".to_string(),
                 });
-                true
+                false
             }
             Msg::OnCanvasClick(event) => {
                 log!("canvas clicked");
@@ -327,10 +311,12 @@ impl Component for GraphComponent {
     }
 
     fn changed(&mut self, ctx: &Context<Self>) -> bool {
-        false
+        log!("on changed");
+        true
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
+        log!("view");
         ctx.link().send_message(Msg::Draw);
         let callback = ctx.link().callback(Msg::OnCanvasClick);
         html! {

@@ -15,6 +15,13 @@ use yew_router::prelude::*;
 
 use crate::graph::CompanyData;
 
+fn is_node_clicked(node_position: &(f64, f64), click_position: &(f64, f64), radius: f64) -> bool {
+    let dx = node_position.0 - click_position.0;
+    let dy = node_position.1 - click_position.1;
+    let distance_squared = dx * dx + dy * dy;
+    distance_squared <= radius * radius
+}
+
 #[derive(Debug, Clone, PartialEq, Routable)]
 pub enum Route {
     #[at("/")]
@@ -101,14 +108,12 @@ impl CanvasApp {
                 let x = center_x + radius * angle.cos();
                 let y = center_y + radius * angle.sin();
                 let area = CompanyData::new(target_position.title(), x, y);
-                log!("Adding node: ", area.title(), "at ", x, ", ", y);
                 new_graph.add_node(area);
                 angle += angle_increment;
             }
             for i in 0..area_count + 1 {
                 let root = 0; // Assuming the root node is the first node.
                 new_graph.add_edge(NodeIndex::new(root), NodeIndex::new(i), 1);
-                log!("Adding edge from ", root, " to ", i);
             }
         }
 
@@ -123,12 +128,6 @@ impl CanvasApp {
             // Get the positions of the source and target nodes
             let source_position = new_graph.node_weight(source_index).unwrap();
             let target_position = new_graph.node_weight(target_index).unwrap();
-
-            log!(
-                "adding edge from {:?} to {:?}",
-                source_position.title(),
-                target_position.title()
-            );
 
             // Draw the edge as a line between the source and target nodes
             offscreen_context.begin_path();

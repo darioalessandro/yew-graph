@@ -13,6 +13,7 @@ use yew_network_graph::graph::NetworkGraph;
 use yew_network_graph::graph::{GraphComponent, Msg};
 use yew_network_graph::Route;
 use yew_router::prelude::*;
+use gloo_console::log;
 
 #[function_component(Main)]
 fn app() -> Html {
@@ -36,6 +37,7 @@ fn switch(routes: &Route) -> Html {
         Route::Root => html! { <GraphComponent node={"Security Union".to_string()}/> },
         Route::ShowNode { title } => {
             let decoded = decode(&title).unwrap();
+            log!("decoded:", decoded.to_string());
             html! { <GraphComponent node={decoded.to_string()}/>
             }
         }
