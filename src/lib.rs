@@ -15,13 +15,6 @@ use yew_router::prelude::*;
 
 use crate::graph::CompanyData;
 
-fn is_node_clicked(node_position: &(f64, f64), click_position: &(f64, f64), radius: f64) -> bool {
-    let dx = node_position.0 - click_position.0;
-    let dy = node_position.1 - click_position.1;
-    let distance_squared = dx * dx + dy * dy;
-    distance_squared <= radius * radius
-}
-
 #[derive(Debug, Clone, PartialEq, Routable)]
 pub enum Route {
     #[at("/")]
