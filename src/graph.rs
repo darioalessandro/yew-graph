@@ -139,7 +139,7 @@ pub fn generate_graph() -> NetworkGraph<CompanyData> {
     {
         let area_count = recruiters.len();
         let angle_increment = 2.0 * std::f32::consts::PI / area_count as f32;
-        let recruiters_node = 2;
+        let recruiters_node = 1;
         for recruiter in recruiters {
             let x = center_x + radius * angle.cos();
             let y = center_y + radius * angle.sin();
@@ -151,8 +151,7 @@ pub fn generate_graph() -> NetworkGraph<CompanyData> {
     }
     // add data annotation
     {
-        let data_annotation_node = 3;
-        let area_count = data_annotation.len();
+        let data_annotation_node = 2;
         for data_annotation in data_annotation {
             let data_annotation = CompanyData::new(data_annotation.to_string(), 0.0, 0.0);
             let data_annotation_index = graph.add_node(data_annotation);
@@ -165,7 +164,7 @@ pub fn generate_graph() -> NetworkGraph<CompanyData> {
     }
     // add customers
     {
-        let customers_node = 4;
+        let customers_node = 3;
         for customer in customers {
             let customer = CompanyData::new(customer.to_string(), 0.0, 0.0);
             let customer_index = graph.add_node(customer);
@@ -174,7 +173,7 @@ pub fn generate_graph() -> NetworkGraph<CompanyData> {
     }
     // add erp
     {
-        let erp_node = 5;
+        let erp_node = 4;
         for erp in erp {
             let erp = CompanyData::new(erp.to_string(), 0.0, 0.0);
             let erp_index = graph.add_node(erp);
@@ -183,7 +182,7 @@ pub fn generate_graph() -> NetworkGraph<CompanyData> {
     }
     // add av_testing
     {
-        let av_testing_node = 6;
+        let av_testing_node = 5;
         for av_testing in av_testing {
             let av_testing = CompanyData::new(av_testing.to_string(), 0.0, 0.0);
             let av_testing_index = graph.add_node(av_testing);
@@ -227,11 +226,7 @@ impl GraphComponent {
         let click_y = event.client_y() as f64;
         let click_position = (click_x, click_y);
         let node_radius = 50.0;
-        log!("click position: ", click_x, click_y);
-
-        log!("on canvas click before");
         let graph = canvas.graph.clone().unwrap();
-        log!("on canvas click after");
         for (node_index, node) in graph.node_indices().zip(graph.node_weights()) {
             let node_position = (node.x() as f64, node.y() as f64);
             if is_node_clicked(&node_position, &click_position, node_radius) {
@@ -269,7 +264,6 @@ impl Component for GraphComponent {
     type Properties = GraphComponentProps;
 
     fn create(ctx: &Context<Self>) -> Self {
-        log!("on create");
         Self {
             canvas_ref_1: NodeRef::default(),
             canvas_app: None,
@@ -277,19 +271,15 @@ impl Component for GraphComponent {
     }
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
-        log!("on udpate");
         return match msg {
             Msg::Draw => {
-                log!("draw");
                 if let Some(canvas) = self.canvas_ref_1.cast::<HtmlCanvasElement>() {
                     let canvas = CanvasApp::new(canvas).unwrap();
                     let node = ctx.props().node.clone();
-                    log!("before draw");
                     let (graph, _) = ctx
                         .link()
                         .context::<UseReducerHandle<ContextData>>(Callback::noop())
                         .expect("context to be set");
-                    log!("after context");
                     let graph = &graph.graph;
                     let canvas = canvas.draw(graph, &node);
                     self.canvas_app = Some(canvas);
@@ -297,7 +287,6 @@ impl Component for GraphComponent {
                 false
             }
             Msg::NodeClicked(company_data) => {
-                log!("node clicked", &company_data.title);
                 let history = ctx.link().history().unwrap();
                 history.push(Route::ShowNode {
                     title: company_data.title.to_string(),
@@ -305,7 +294,6 @@ impl Component for GraphComponent {
                 false
             }
             Msg::OnCanvasClick(event) => {
-                log!("canvas clicked");
                 if let Some(canvas) = &self.canvas_app {
                     if let Some(msg) = self.on_canvas_click(event, ctx, canvas) {
                         ctx.link().send_message(msg);
@@ -317,12 +305,10 @@ impl Component for GraphComponent {
     }
 
     fn changed(&mut self, ctx: &Context<Self>) -> bool {
-        log!("on changed");
         true
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
-        log!("view");
         ctx.link().send_message(Msg::Draw);
         let callback = ctx.link().callback(Msg::OnCanvasClick);
         html! {

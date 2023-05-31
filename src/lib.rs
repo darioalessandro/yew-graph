@@ -105,7 +105,8 @@ impl CanvasApp {
 
         {
             let area_count = graph.edges(root.0).count();
-            let angle_increment = 2.0 * std::f32::consts::PI / area_count as f32;
+            let area_count_2 = if area_count < 1 { 1 } else { area_count - 1 };
+            let angle_increment = 2.0 * std::f32::consts::PI / area_count_2 as f32;
             for edge in graph.edges(root.0) {
                 let target_index = edge.target();
                 let target_position = graph.node_weight(target_index).unwrap();
@@ -115,7 +116,7 @@ impl CanvasApp {
                 new_graph.add_node(area);
                 angle += angle_increment;
             }
-            for i in 0..area_count + 1 {
+            for i in 0..area_count {
                 let root = 0; // Assuming the root node is the first node.
                 new_graph.add_edge(NodeIndex::new(root), NodeIndex::new(i), 1);
             }
