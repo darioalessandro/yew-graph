@@ -1,16 +1,16 @@
 use std::rc::Rc;
 
-use gloo_console::log;
-use petgraph::{stable_graph::NodeIndex, Graph};
-use rand::Rng;
-use wasm_bindgen::{prelude::Closure, JsCast, JsValue};
 
-use web_sys::window;
+use petgraph::{stable_graph::NodeIndex, Graph};
+
+
+
+
 use web_sys::HtmlCanvasElement;
 use yew::prelude::*;
 use yew_router::prelude::*;
 
-use crate::graph;
+
 use crate::CanvasApp;
 use crate::Route;
 
@@ -20,7 +20,7 @@ pub struct ContextData {
 }
 
 impl PartialEq for ContextData {
-    fn eq(&self, other: &Self) -> bool {
+    fn eq(&self, _other: &Self) -> bool {
         false
     }
 }
@@ -29,7 +29,7 @@ impl Reducible for ContextData {
     type Action = ContextData;
 
     fn reduce(self: Rc<Self>, action: Self::Action) -> Rc<Self> {
-        action.clone().into()
+        action.into()
     }
 }
 
@@ -219,7 +219,7 @@ impl GraphComponent {
     fn on_canvas_click(
         &self,
         event: MouseEvent,
-        ctx: &Context<Self>,
+        _ctx: &Context<Self>,
         canvas: &CanvasApp,
     ) -> Option<Msg> {
         let click_x = event.client_x() as f64;
@@ -227,7 +227,7 @@ impl GraphComponent {
         let click_position = (click_x, click_y);
         let node_radius = 50.0;
         let graph = canvas.graph.clone().unwrap();
-        for (node_index, node) in graph.node_indices().zip(graph.node_weights()) {
+        for (_node_index, node) in graph.node_indices().zip(graph.node_weights()) {
             let node_position = (node.x() as f64, node.y() as f64);
             if is_node_clicked(&node_position, &click_position, node_radius) {
                 // let canvas1 = self.canvas_ref_1.cast::<HtmlCanvasElement>().unwrap();
@@ -263,7 +263,7 @@ impl Component for GraphComponent {
     type Message = Msg;
     type Properties = GraphComponentProps;
 
-    fn create(ctx: &Context<Self>) -> Self {
+    fn create(_ctx: &Context<Self>) -> Self {
         Self {
             canvas_ref_1: NodeRef::default(),
             canvas_app: None,
@@ -289,7 +289,7 @@ impl Component for GraphComponent {
             Msg::NodeClicked(company_data) => {
                 let history = ctx.link().history().unwrap();
                 history.push(Route::ShowNode {
-                    title: company_data.title.to_string(),
+                    title: company_data.title,
                 });
                 false
             }
@@ -304,7 +304,7 @@ impl Component for GraphComponent {
         };
     }
 
-    fn changed(&mut self, ctx: &Context<Self>) -> bool {
+    fn changed(&mut self, _ctx: &Context<Self>) -> bool {
         true
     }
 

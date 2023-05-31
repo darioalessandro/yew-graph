@@ -7,10 +7,10 @@ use petgraph::adj::IndexType;
 use petgraph::adj::NodeIndex;
 use petgraph::visit::EdgeRef;
 use petgraph::visit::IntoNodeReferences;
-use petgraph::visit::NodeRef;
+
 use wasm_bindgen::prelude::*;
 use web_sys::{CanvasRenderingContext2d, HtmlCanvasElement, OffscreenCanvas};
-use yew::prelude::*;
+
 use yew_router::prelude::*;
 
 use crate::graph::CompanyData;
@@ -54,7 +54,7 @@ impl CanvasApp {
         })
     }
 
-    pub fn draw<A: NodeData>(mut self, graph: &NetworkGraph<A>, node: &str) -> CanvasApp {
+    pub fn draw<A: NodeData>(self, graph: &NetworkGraph<A>, node: &str) -> CanvasApp {
         log!("drawing");
         // Create offscreen canvas at 2x the size than the current canvas
         let offscreen_canvas =
@@ -122,7 +122,7 @@ impl CanvasApp {
             }
         }
 
-        let radius = 90.0 as f64;
+        let radius = 90.0_f64;
         let root = new_graph
             .node_references()
             .find(|n| n.1.title() == node)
@@ -147,9 +147,9 @@ impl CanvasApp {
             offscreen_context.begin_path();
             offscreen_context
                 .arc(
-                    x as f64,
-                    y as f64,
-                    radius.into(),
+                    x,
+                    y,
+                    radius,
                     0.0,
                     2.0 * std::f64::consts::PI,
                 )

@@ -1,17 +1,17 @@
-use std::rc::Rc;
 
-use gloo_console::log;
+
+
 use urlencoding::decode;
-use wasm_bindgen::prelude::*;
-use web_sys::HtmlCanvasElement;
+
+
 use yew::functional::*;
 use yew::prelude::*;
-use yew::prelude::*;
+
 use yew_network_graph::graph::generate_graph;
-use yew_network_graph::graph::CompanyData;
+
 use yew_network_graph::graph::ContextData;
-use yew_network_graph::graph::NetworkGraph;
-use yew_network_graph::graph::{GraphComponent, Msg};
+
+use yew_network_graph::graph::{GraphComponent};
 use yew_network_graph::Route;
 use yew_router::prelude::*;
 
@@ -36,7 +36,7 @@ fn switch(routes: &Route) -> Html {
     match routes {
         Route::Root => html! { <GraphComponent node={"Security Union".to_string()}/> },
         Route::ShowNode { title } => {
-            let decoded = decode(&title).unwrap();
+            let decoded = decode(title).unwrap();
             html! { <GraphComponent node={decoded.to_string()}/>
             }
         }
