@@ -47,7 +47,11 @@ impl CanvasApp {
             .unwrap()
             .dyn_into::<CanvasRenderingContext2d>()?;
 
-        Ok(Self { context, canvas, graph: None })
+        Ok(Self {
+            context,
+            canvas,
+            graph: None,
+        })
     }
 
     pub fn draw<A: NodeData>(mut self, graph: &NetworkGraph<A>, node: &str) -> CanvasApp {
@@ -99,7 +103,6 @@ impl CanvasApp {
         let radius = 300.0;
         let mut angle: f32 = 0.0;
 
-
         {
             let area_count = graph.edges(root.0).count();
             let angle_increment = 2.0 * std::f32::consts::PI / area_count as f32;
@@ -142,7 +145,13 @@ impl CanvasApp {
             offscreen_context.set_fill_style(&JsValue::from_str("white"));
             offscreen_context.begin_path();
             offscreen_context
-                .arc(x as f64, y as f64, radius.into(), 0.0, 2.0 * std::f64::consts::PI)
+                .arc(
+                    x as f64,
+                    y as f64,
+                    radius.into(),
+                    0.0,
+                    2.0 * std::f64::consts::PI,
+                )
                 .unwrap();
             offscreen_context.fill();
 
@@ -164,6 +173,7 @@ impl CanvasApp {
         Self {
             context: self.context,
             canvas: self.canvas,
-            graph: Some(new_graph)}
+            graph: Some(new_graph),
+        }
     }
 }

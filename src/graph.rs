@@ -217,7 +217,12 @@ pub enum Msg {
 }
 
 impl GraphComponent {
-    fn on_canvas_click(&self, event: MouseEvent, ctx: &Context<Self>, canvas: &CanvasApp) -> Option<Msg> {
+    fn on_canvas_click(
+        &self,
+        event: MouseEvent,
+        ctx: &Context<Self>,
+        canvas: &CanvasApp,
+    ) -> Option<Msg> {
         let click_x = event.client_x() as f64;
         let click_y = event.client_y() as f64;
         let click_position = (click_x, click_y);
@@ -267,7 +272,7 @@ impl Component for GraphComponent {
         log!("on create");
         Self {
             canvas_ref_1: NodeRef::default(),
-            canvas_app: None
+            canvas_app: None,
         }
     }
 
@@ -302,9 +307,9 @@ impl Component for GraphComponent {
             Msg::OnCanvasClick(event) => {
                 log!("canvas clicked");
                 if let Some(canvas) = &self.canvas_app {
-                        if let Some(msg) = self.on_canvas_click(event, ctx, canvas) {
-                            ctx.link().send_message(msg);
-                        }
+                    if let Some(msg) = self.on_canvas_click(event, ctx, canvas) {
+                        ctx.link().send_message(msg);
+                    }
                 }
                 false
             }

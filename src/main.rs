@@ -1,5 +1,6 @@
 use std::rc::Rc;
 
+use gloo_console::log;
 use urlencoding::decode;
 use wasm_bindgen::prelude::*;
 use web_sys::HtmlCanvasElement;
@@ -13,7 +14,6 @@ use yew_network_graph::graph::NetworkGraph;
 use yew_network_graph::graph::{GraphComponent, Msg};
 use yew_network_graph::Route;
 use yew_router::prelude::*;
-use gloo_console::log;
 
 #[function_component(Main)]
 fn app() -> Html {
