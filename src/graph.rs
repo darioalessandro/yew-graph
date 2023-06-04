@@ -3,9 +3,7 @@ use std::rc::Rc;
 
 use petgraph::{stable_graph::NodeIndex, Graph};
 
-
-
-
+use gloo_console::log;
 use web_sys::HtmlCanvasElement;
 use yew::prelude::*;
 use yew_router::prelude::*;
@@ -270,6 +268,15 @@ impl Component for GraphComponent {
         }
     }
 
+    fn rendered(&mut self, _ctx: &Context<Self>, _first_render: bool) {
+        let canvas: HtmlCanvasElement = self.canvas_ref_1.cast().unwrap();
+        let parent_element = canvas.parent_element().unwrap();
+        let rect = parent_element.get_bounding_client_rect();
+        canvas.set_width(rect.width() as u32);
+        canvas.set_height(rect.height() as u32);   
+        log!("rendered", canvas.width(), canvas.height());
+    }
+
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         return match msg {
             Msg::Draw => {
@@ -313,9 +320,8 @@ impl Component for GraphComponent {
         let callback = ctx.link().callback(Msg::OnCanvasClick);
         html! {
             <>
-            <div class="canvas-container" style="position: relative;">
-                <canvas  ref={self.canvas_ref_1.clone()} width="1800" height="900" onclick={callback}
-                 style="position: absolute; top: 0; left: 0; opacity: 1;z-index: 3;"
+            <div class="canvas-container">
+                <canvas  ref={self.canvas_ref_1.clone()} onclick={callback}
                 />
             </div>
             </>
