@@ -41,9 +41,9 @@ pub type NetworkGraph<A> = Graph<A, usize>;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct CompanyData {
-    title: String,
-    x: f32,
-    y: f32,
+    pub title: String,
+    pub x: f32,
+    pub y: f32,
 }
 
 impl CompanyData {

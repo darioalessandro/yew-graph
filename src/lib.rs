@@ -30,7 +30,7 @@ const BACKGROUND_COLOR: &str = "#354343";
 pub struct CanvasApp {
     context: CanvasRenderingContext2d,
     canvas: HtmlCanvasElement,
-    graph: Option<NetworkGraph<CompanyData>>,
+    pub graph: Option<NetworkGraph<CompanyData>>,
 }
 
 impl CanvasApp {
